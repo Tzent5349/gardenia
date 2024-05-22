@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { getProductDetails } from "@/actions/get-products";
 import ProductCard from "../shared/cards/ProductCard";
-import { Product, Gender, Brand, Size, Color } from "@/types/page";
+import { Product, Gender, Brand, Size, Color, ColorA } from "@/types/page";
 import { getColorDetails } from "@/actions/get-colors";
 import { getGenderById } from "@/actions/get-gender";
 import { getAllSizes } from "@/actions/get-sizes";
@@ -143,7 +143,7 @@ const ProductByCategory = ({ category }: ProductByCategoryProps) => {
       // Extract filter values
       const prices = new Set<number>();
       const genders = new Set<string>();
-      const colorsArray: Color[] = [];
+      const colorsArray: ColorA[] = [];
       const sizes: Size[] = [];
       const brands: Brand[] = [];
 
@@ -156,7 +156,7 @@ const ProductByCategory = ({ category }: ProductByCategoryProps) => {
         product.ImgColorPrice.forEach((icp: any) => {
           if (!colorsArray.some((color:any) => color.colorId === icp.colorId)) {
             colorsArray.push({
-              colorName: icp.colorName,
+              colorName: icp.colorName ,
               colorValue: icp.colorValue,
               colorId: icp.colorId,
             });

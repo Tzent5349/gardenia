@@ -19,6 +19,11 @@ export interface Category {
 /*     products:[] */
     
 }
+export interface ColorA {
+    colorName: string;
+    colorValue: string;
+    colorId:string;
+}
 
 export interface Color {
     _id: string;
@@ -34,6 +39,7 @@ export interface Gender {
 }
 
 export interface Product{
+    [x: string]: any;
 
     _id: string;
     sku: string;
