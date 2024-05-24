@@ -9,6 +9,7 @@ import { Product } from "@/types/page";
 import { Skeleton } from "@/components/ui/skeleton";
 import Loading from "./loading";
 
+
 type ProductDetailProps = {
   params: {
     productId: string;
@@ -27,6 +28,7 @@ const Page = ({ params: { productId } }: ProductDetailProps) => {
   }; */
   const [loading, setLoading] = useState(true);
   const [productDetails, setProductDetails] = useState<any>();
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,6 +84,8 @@ const Page = ({ params: { productId } }: ProductDetailProps) => {
 /*   if (!productDetails) {
     return <ProductSkeleton />;
   } */
+
+
 
   if (loading || !productDetails) {
     return (

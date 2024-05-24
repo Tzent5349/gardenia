@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Jost } from "next/font/google";
 import "./globals.css";
+import '@smastrom/react-rating/style.css'
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ToastProvider } from "@/providers/toast-provider";
 import Head from "next/head";

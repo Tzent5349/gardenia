@@ -27,42 +27,6 @@ export function RightNavbar() {
   const [cartCount, setCartCount] = useState(0);
   const { user } = useUser();
 
-  useEffect(() => {
-    if (user) {
-      // Trigger API call to create user
-      fetch(process.env.NEXT_PUBLIC_API_URL + '/create-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          userName: `${user.firstName} ${user.lastName}`,
-          email: user.primaryEmailAddress,
-/*           profilePicture: user.imageUrl, */
-          // Include other user data as needed
-        }),
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Failed to create user');
-          }
-        })
-        .catch(error => {
-          console.error('Error creating user:', error);
-        });
-  
-      // Fetch user-specific data here
-      // Example: setWishlistCount(fetchUserWishlistCount());
-      // Example: setCartCount(fetchUserCartCount());
-      // Dummy data for example
-      /*       setWishlistCount(10);
-      setCartCount(5); */
-    } else {
-      /*       setWishlistCount(0);
-      setCartCount(0); */
-    }
-  }, [user]);
 
   const handleCheckout = () => {
     if (!user) {
