@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { getColorDetails } from "@/actions/get-colors";
-import { getAllSizes /* getAllSizesByGenderId */ } from "@/actions/get-sizes";
+import { getColorById } from "@/actions/get-colors";
+import { getAllSizes } from "@/actions/get-sizes"; // Updated import
 import { Button } from "../ui/button";
 import { Heart, MoveUpRight, Truck } from "lucide-react";
 import Link from "next/link";
@@ -17,13 +17,18 @@ import SimilarProduct from "./SimilarProduct";
 import { Separator } from "../ui/separator";
 import { getGenderById } from "@/actions/get-gender";
 import ToggleSize from "./ToggleSize";
-/* import { Rating as ReactRating, Star } from '@smastrom/react-rating' */
 import { getReviewOfProduct } from "@/actions/get-review";
 import { useUser } from "@clerk/nextjs";
 import { Rating } from "react-simple-star-rating";
-import { getHandleWishList, getUserById } from "@/actions/get-user";
-import { User } from "@/types/page";
-import Loading from "./loading";
+import { getUserById } from "@/actions/get-user";
+import { fetchUserShoppingCart, handleShoppingCart } from '@/lib/store/features/cart/cartSlice';
+import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
+import wishListSlice, {
+  fetchUserWishList,
+  handleWishList,
+} from "@/lib/store/features/wishList/wishListSlice"; // Updated import
+import toast from "react-hot-toast";
+
 
 type ProductDetailProps = {
   product: any;
@@ -31,21 +36,23 @@ type ProductDetailProps = {
 };
 
 const ProductDetails = ({ product, similiarProducts }: ProductDetailProps) => {
-  const [nProduct, setNProduct] = useState<any>(); // Initialize as undefined
+  const dispatch = useAppDispatch();
+  const wishlistItems = useAppSelector((state) => state.wishList.items);
+  const cart = useAppSelector((state) => state.cart);
+  const [isFavourite, setIsFavourite] = useState(false);
+  const { user } = useUser(); // Get the user object from Clerk
 
+  const [nProduct, setNProduct] = useState<any>(); // Initialize as undefined
   const [index, setIndex] = useState(0);
   const [selectedColorIndex, setSelectedColorIndex] = useState<number>(0);
   const [rating, setRating] = useState(0);
-  const [isFavourite, setIsFavourite] = useState(false)
-  const [isInWishlist, setIsInWishlist] = useState(false);
-  const [isLoading, setIsLoading] = useState(false)
-
-  const { user } = useUser(); // Get the user object from Clerk
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedSize, setSelectedSize] = useState("")
 
   useEffect(() => {
-    const fetchColorDetails = async (colorId:string) => {
+    const fetchColorDetails = async (colorId: string) => {
       try {
-        const colorDetails = await getColorDetails(colorId);
+        const colorDetails = await getColorById(colorId);
         return colorDetails;
       } catch (error) {
         console.error("Error fetching color details:", error);
@@ -94,7 +101,6 @@ const ProductDetails = ({ product, similiarProducts }: ProductDetailProps) => {
       const updatedImgColorPrice = await Promise.all(
         product.ImgColorPrice.map(async (item: any) => {
           const colorDetail = await fetchColorDetails(item.color);
-          console.log("hi "+colorDetail)
           const gender = await fetchGender();
           const allSizes = await fetchAllSizes();
           const GenderFilteredSizes = allSizes?.filter(
@@ -125,16 +131,13 @@ const ProductDetails = ({ product, similiarProducts }: ProductDetailProps) => {
         })
       );
 
-      /*       const categoryName = await fetchCategoryName(); */
       const gender = await fetchGender();
       const review = await fetchReviews(product._id);
       const updatedProduct = {
         ...product,
-        /*         category: categoryName, */
         ImgColorPrice: updatedImgColorPrice,
         gender: gender,
         reviews: review,
-        //categoryName: categoryName?.name,
       };
 
       // Set the updated product to nProduct
@@ -155,25 +158,6 @@ const ProductDetails = ({ product, similiarProducts }: ProductDetailProps) => {
     }
   }, [nProduct]);
 
-  useEffect(() => {
-    if (user) {
-      const fetchUserData = async () => {
-        try {
-          const detailedUser = await getUserById(user.publicMetadata.userId);
-          if (detailedUser.wishList && detailedUser.wishList.includes(product._id)) {
-            setIsFavourite(true);
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      };
-
-      fetchUserData();
-    }
-  }, [user, product._id]);
-
-/*     console.log(isFavourite); */
-
   const handleColorButtonClick = (index: number) => {
     if (index !== selectedColorIndex) {
       setIndex(0);
@@ -181,43 +165,109 @@ const ProductDetails = ({ product, similiarProducts }: ProductDetailProps) => {
     setSelectedColorIndex(index);
   };
 
-  /*   console.log(nProduct) */
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        if (user) {
+          const detailedUser = await getUserById(user.publicMetadata.userId as string);
+          if (detailedUser.wishList && detailedUser.wishList.includes(product._id)) {
+            setIsFavourite(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
 
-  /*   console.log(availableSize); */
-  const addToWishlist = async () => {
-    setIsFavourite(!isFavourite)
-    try {
-      // Show loading indicator
-      setIsLoading(true);
-  
-      // Call the function to add or remove the product from the wishlist
-      const response = await getHandleWishList(
-        user?.publicMetadata.userId,
-        product._id
+    fetchUserData();
+  }, [user, product]);
+
+  useEffect(() => {
+    if (user && wishlistItems.includes(product._id)) {
+      setIsFavourite(true);
+    }
+  }, [user, wishlistItems, product]);
+
+  const handleToggleWishlist = () => {
+    if (user) {
+      const getMessage = wishlistItems.includes(product._id)
+      toast.success(
+        `${
+          getMessage
+            ? "product removed from wishlist"
+            : "product added to wishlist"
+        }`
       );
-  
-      // Update local state based on the response
-      setIsInWishlist(response.success);
-  
-      // Hide loading indicator
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error adding to wishlist:', error);
-      // Display error message to the user
-      /* showToast('An error occurred while adding to wishlist. Please try again later.'); */
-      // Hide loading indicator
-      setIsLoading(false);
+
+      dispatch(handleWishList({ userId: user?.publicMetadata.userId as string, productId: product._id }));
     }
   };
-  
-  
 
+  useEffect(() => {
+    if (user) {
+      setIsFavourite(wishlistItems.includes(product._id));
+    }
+  }, [user, wishlistItems, product]);
+
+  useEffect(() => {
+    if (product.reviews) {
+      const sumOfRatings = product.reviews.reduce((total: number, review: any) => total + review.rating, 0);
+      const averageRating = sumOfRatings / product.reviews.length;
+      setRating(averageRating);
+    }
+  }, [product.reviews]);
 
   const handleRating = (rate: number) => {
     setRating(rate);
   };
 
-/* console.log(nProduct) */
+/*   const handleAddToCart = (selectedColorIndex: number) => {
+    if (user) {
+      const selectedColorPrice = product.ImgColorPrice[selectedColorIndex];
+      const colorId = product.ImgColorPrice[selectedColorIndex].color;
+      console.log(colorId)
+      const sizeId = selectedSize;
+      console.log(` yo ho selected color ${selectedColorPrice}, colorId: ${colorId}, sizeId: ${sizeId}`);
+
+      dispatch(handleShoppingCart({
+        userId: user?.publicMetadata.userId as string,
+        productId: product._id,
+        imgColorPriceId: selectedColorPrice._id,
+        colorId: colorId,
+        sizeId: sizeId
+      }));
+    }
+  } */
+
+  const handleAddToCart = (selectedColorIndex: number) => {
+    if (!selectedSize) {
+      // If size is not selected, show a warning
+      toast.error("Please select a size before adding to cart.");
+      return; // Stop execution if size is not selected
+    }
+  
+    if (user) {
+      const selectedColorPrice = product.ImgColorPrice[selectedColorIndex];
+      const colorId = product.ImgColorPrice[selectedColorIndex].color;
+      const sizeId = selectedSize;
+  
+      dispatch(handleShoppingCart({
+        userId: user?.publicMetadata.userId as string,
+        productId: product._id,
+        imgColorPriceId: selectedColorPrice._id,
+        colorId: colorId,
+        sizeId: sizeId
+      }));
+      toast.success( ` ${product.name} added to cart`)
+    }
+  }
+  
+
+  useEffect(() => {
+    dispatch(fetchUserShoppingCart(user?.publicMetadata.userId as string));
+  }, [dispatch, user]);
+
+
   return (
     <section>
       <div className="productInfoWrapper flex flex-col w-full justify-center items-center h-full">
@@ -286,9 +336,9 @@ const ProductDetails = ({ product, similiarProducts }: ProductDetailProps) => {
                     <button
                       key={item.id}
                       className={
-                        "w-6 h-6 rounded-full" +
+                        "w-6 h-6 rounded-full border border-primary  " +
                         (selectedColorIndex === index
-                          ? " w-6 h-6 outline outline-offset-2 overflow-hidden"
+                          ? " w-6 h-6 outline border-none bg-primary-foreground outline-accent-foreground outline-offset-2 overflow-hidden"
                           : "")
                       }
                       style={{ backgroundColor: item.colorValue }}
@@ -309,6 +359,7 @@ const ProductDetails = ({ product, similiarProducts }: ProductDetailProps) => {
                     availableSizes={
                       nProduct.ImgColorPrice[selectedColorIndex].sizes
                     }
+                    onChangeHandler={(value)=>{setSelectedSize(value)}}
                   />
                 )}
                 <Link href="" className="flex items-center gap-1">
@@ -348,16 +399,22 @@ const ProductDetails = ({ product, similiarProducts }: ProductDetailProps) => {
                 <Button
                   type="button"
                   className="flex w-full border rounded-2xl gap-4 bg-blue-500 font-semibold"
-                  onClick={addToWishlist}
+                  onClick={() => handleAddToCart(selectedColorIndex)}
                 >
                   <Cart /> Add to cart
                 </Button>
                 <Button
                   type="button"
-                  className={isFavourite? "rounded-xl " :"flex w-fit border rounded-xl hover:bg-red-600"}
-                  onClick={addToWishlist}
+                  className={`${
+                    isFavourite
+                      ? "rounded-xl"
+                      : "flex w-fit border rounded-xl hover:bg-red-600"
+                  }`}
+                  onClick={handleToggleWishlist}
                 >
-                  <Heart className={isFavourite?"fill-red-500 hover:fill-none":""}  />
+                  <Heart
+                    className={isFavourite ? "fill-red-500 hover:fill-none" : ""}
+                  />
                 </Button>
               </div>
             </div>
@@ -368,7 +425,7 @@ const ProductDetails = ({ product, similiarProducts }: ProductDetailProps) => {
           <h1 className="text-2xl">People also liked:</h1>
           <SimilarProduct similarProduct={similiarProducts} />
         </div>
-      </div>      {/* </Suspense> */}
+      </div>{" "}
     </section>
   );
 };

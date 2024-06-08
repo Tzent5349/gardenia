@@ -1,5 +1,5 @@
 import { createUser } from "@/actions/create-user";
-import { clerkClient } from "@clerk/nextjs/server";
+import { clerkClient, Session } from "@clerk/nextjs/server";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
@@ -86,6 +86,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "New user created", user: newUser });
   }
 
+if(eventType === "session.created"){
+
+}
 
 /*   console.log(`Webhook with and ID of ${id} and type of ${eventType}`);
   console.log("Webhook body:", body); */

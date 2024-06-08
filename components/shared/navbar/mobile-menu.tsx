@@ -1,5 +1,5 @@
-import Image from "next/image";
 
+import Image from "next/image";
 import {
   Sheet,
   SheetClose,
@@ -15,16 +15,18 @@ import { Menu } from "lucide-react";
 
 import BigLogo from "@/public/assets/logo/big.svg";
 import { cn } from "@/lib/utils";
-import { MainNav } from "./main-nav";
-import { RightNavbar } from "./right-navbar";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
-import { Separator } from "@/components/ui/separator";
+
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+
+
 
 export function MobileMenu() {
+
+
   return (
     <div className="z-50">
       <Sheet>

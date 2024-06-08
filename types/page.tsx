@@ -105,6 +105,7 @@ export type SearchParamProps = {
 };
 
 export type Review = {
+    [x: string]: any;
     userId: string;
     productId: string;
     rating: number
@@ -118,7 +119,17 @@ export type User = {
   email: string
   shippingAddress: string
   reviews: []
-  wishList:[]
-  cartHolder: []
+  wishList:[string]
+  cartHolder: [{productId:string, quantity:number}]
 
+}
+
+export type Order = {
+  userId: string;
+  productId: [];
+  quantity: number;
+  imgColorPrice:string;
+  sizeId:string;
+  colorId:string;
+  shippingAddress: string;
 }

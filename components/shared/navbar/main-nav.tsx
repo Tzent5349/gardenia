@@ -45,7 +45,7 @@ export function MainNav({
           href={route.href}
           className={cn(
             'text-md font-semibold transition-colors hover:text-amber-400',
-            route.active ? 'text-accent dark:text-accent' : 'text-primary'
+            route.active ? 'text-accent dark:text-muted-foreground' : 'text-primary'
           )}
         >
           {route.label}
